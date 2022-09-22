@@ -210,5 +210,10 @@ namespace Radical_ver._2._0
         {
             textBox1.Text += '/';
         }
+
+        private void numericUpDown1_ValueChanged(object sender, EventArgs e)
+        {
+
+        }
     }
 }
