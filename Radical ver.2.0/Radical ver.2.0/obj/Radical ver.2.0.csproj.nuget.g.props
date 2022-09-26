@@ -13,4 +13,7 @@
     <SourceRoot Include="C:\Users\tolik\.nuget\packages\" />
     <SourceRoot Include="C:\Program Files (x86)\Microsoft Visual Studio\Shared\NuGetPackages\" />
   </ItemGroup>
+  <PropertyGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
+    <Pkgpython Condition=" '$(Pkgpython)' == '' ">C:\Users\tolik\.nuget\packages\python\3.10.7</Pkgpython>
+  </PropertyGroup>
 </Project>

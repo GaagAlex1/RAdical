@@ -1,7 +1,6 @@
-using AngouriMath;
-using MathNet.Symbolics;
+using Python.Runtime;
+using Dangl.Calculator;
 using System.Text.RegularExpressions;
-using System.Globalization;
 
 
 namespace Radical_ver._2._0
@@ -13,34 +12,67 @@ namespace Radical_ver._2._0
             InitializeComponent();
         }
 
-        static bool isDouble(string line)
+        static string SimplifyExp(string line)
         {
-            line = line.Replace('.', ',');
-            if (line.Contains("(")) line = line[0] + line.Substring(2, line.Length - 3);
-            return double.TryParse(line, out double _);
+            if (!line.Contains("^")) return "sqrt" + line;
+
+            line = line.Replace("^", "e");
+            Regex r = new Regex(@"e(\d+)");
+            MatchCollection matches = r.Matches(line);
+
+            foreach (Match match in matches)
+                line = line.Replace(match.Value, "^(" + match.Groups[1].Value + "/2)");
+
+
+            r = new Regex(@"e(\w+)");
+            matches = r.Matches(line);
+
+            foreach (Match match in matches)
+                line = line.Replace(match.Value, "^(" + match.Groups[1].Value + "/2)");
+
+            return line;
         }
+
+        static string Algebra(string line)
+        {
+            PythonEngine.Initialize();
+            using (Py.GIL())
+            {
+                dynamic sympy = Py.Import("sympy");
+                dynamic simplification = sympy.simplify;
+                dynamic factor = sympy.factor;
+
+                line = factor(line).ToString();
+                line = line.Replace("**", "^");
+
+                string[] factors = line.Split('*');
+                for (int i = 0; i < factors.Length; i++)
+                {
+                    factors[i] = SimplifyExp(factors[i]);
+                    if (i == 0) line = factors[i];
+                    else line += "*" + factors[i];
+                }
+            }
+            return line;
+        }
+
+        static string Arithmetic(string line,int dg)
+        {
+            line = "sqrt(" + line + ")";
+
+            var expr = Calculator.Calculate(line);
+
+            double res = Math.Round(Convert.ToDouble((expr.Result)),dg);
+            return res.ToString();
+        }
+
         static string CalculateExpr(string line, int dg)
         {
-            
-            if (isDouble(line))
-            {   
-                if (Convert.ToDouble(line) >= 0) line = Math.Round(Math.Sqrt(Convert.ToDouble(line)), dg).ToString();
-                else line = Math.Round(Math.Sqrt(Math.Abs(Convert.ToDouble(line))), dg).ToString() + "i";
-                return line;
-            }
-            else
-            {
-                line = "sqrt(" + line + ")";
-                var expr = Infix.ParseOrThrow(line);
-                line = Infix.Format(Algebraic.Expand(expr));
-                Entity ent = line;
-                line = (ent.Simplify()).ToString();
-                line = Regex.Replace(line, @"sqrt\((\d+)\)", match =>
-                Math.Round(Math.Sqrt(double.Parse(match.Groups[1].Value)),dg).ToString(CultureInfo.CurrentCulture));
-                line = Regex.Replace(line, @"sqrt\(-(\d+)\)", match =>
-                Math.Round(Math.Sqrt(Math.Abs(double.Parse(match.Groups[1].Value))),dg).ToString(CultureInfo.CurrentCulture) + "i ");
-                return line;
-            }
+            if (!line.Any(Char.IsLetter)) line = Arithmetic(line, dg);
+            else line = Algebra(line);
+            line = line.Replace("**", "^");
+
+            return line;
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -188,7 +220,7 @@ namespace Radical_ver._2._0
 
         private void button15_Click(object sender, EventArgs e)
         {
-            textBox1.Text += '.';
+            textBox1.Text += ',';
         }
 
         private void button16_Click(object sender, EventArgs e)
@@ -231,10 +263,10 @@ namespace Radical_ver._2._0
 
         private void button22_Click(object sender, EventArgs e)
         {
-            if (!Char.IsDigit(textBox1.Text[textBox1.Text.Length - 1])) textBox1.Text = Math.PI.ToString().Replace(',', '.');
+            if (!Char.IsDigit(textBox1.Text[textBox1.Text.Length - 1])) textBox1.Text = Math.PI.ToString();
             if (textBox1.Text == "0")
             {
-                textBox1.Text = Math.PI.ToString().Replace(',','.');
+                textBox1.Text = Math.PI.ToString();
             }
         }
 
